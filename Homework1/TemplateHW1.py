@@ -13,20 +13,22 @@ def word_count_per_doc(document):
             pairs_dict[word] += 1
     return [(key, pairs_dict[key]) for key in pairs_dict.keys()]
 
+
 def word_count_1(docs):
-    word_count = (docs.flatMap(word_count_per_doc) # <-- MAP PHASE (R1)
-                 .reduceByKey(lambda x, y: x + y)) # <-- REDUCE PHASE (R1)
+    word_count = (docs.flatMap(word_count_per_doc)  # <-- MAP PHASE (R1)
+                  .reduceByKey(lambda x, y: x + y))  # <-- REDUCE PHASE (R1)
     return word_count
+
 
 def word_count_2(docs, K):
     def word_count_per_doc_random(document):
-       pairs_dict = {}
-       for word in document.split(' '):
-           if word not in pairs_dict.keys():
-               pairs_dict[word] = 1
-           else:
-               pairs_dict[word] += 1
-       return [(rand.randint(0,K-1),(key, pairs_dict[key])) for key in pairs_dict.keys()]
+        pairs_dict = {}
+        for word in document.split(' '):
+            if word not in pairs_dict.keys():
+                pairs_dict[word] = 1
+            else:
+                pairs_dict[word] += 1
+        return [(rand.randint(0, K - 1), (key, pairs_dict[key])) for key in pairs_dict.keys()]
 
     def gather_pairs(pairs):
         pairs_dict = {}
@@ -38,11 +40,12 @@ def word_count_2(docs, K):
                 pairs_dict[word] += occurrences
         return [(key, pairs_dict[key]) for key in pairs_dict.keys()]
 
-    word_count = (docs.flatMap(word_count_per_doc_random) # <-- MAP PHASE (R1)
-                 .groupByKey()                            # <-- REDUCE PHASE (R1)
-                 .flatMap(gather_pairs)                   
-                 .reduceByKey(lambda x, y: x + y))        # <-- REDUCE PHASE (R2)
+    word_count = (docs.flatMap(word_count_per_doc_random)  # <-- MAP PHASE (R1)
+                  .groupByKey()  # <-- REDUCE PHASE (R1)
+                  .flatMap(gather_pairs)
+                  .reduceByKey(lambda x, y: x + y))  # <-- REDUCE PHASE (R2)
     return word_count
+
 
 def word_count_2_with_partition(docs):
     def gather_pairs_partitions(pairs):
@@ -55,15 +58,15 @@ def word_count_2_with_partition(docs):
                 pairs_dict[word] += occurrences
         return [(key, pairs_dict[key]) for key in pairs_dict.keys()]
 
-    word_count = (docs.flatMap(word_count_per_doc) # <-- MAP PHASE (R1)
-        .mapPartitions(gather_pairs_partitions)    # <-- REDUCE PHASE (R1)
-        .groupByKey()                              # <-- REDUCE PHASE (R2)
-		.mapValues(lambda vals: sum(vals)))
+    word_count = (docs.flatMap(word_count_per_doc)  # <-- MAP PHASE (R1)
+                  .mapPartitions(gather_pairs_partitions)  # <-- REDUCE PHASE (R1)
+                  .groupByKey()  # <-- REDUCE PHASE (R2)
+                  .mapValues(lambda vals: sum(vals)))
 
     return word_count
 
-def main():
 
+def main():
     # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     # CHECKING NUMBER OF CMD LINE PARAMETERS
     # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -87,13 +90,13 @@ def main():
     # Read input file and subdivide it into K random partitions
     data_path = sys.argv[2]
     assert os.path.isfile(data_path), "File or folder not found"
-    docs = sc.textFile(data_path,minPartitions=K).cache()
+    docs = sc.textFile(data_path, minPartitions=K).cache()
     docs.repartition(numPartitions=K)
 
     # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     # SETTING GLOBAL VARIABLES
     # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    numdocs = docs.count();
+    numdocs = docs.count()
     print("Number of documents = ", numdocs)
 
     # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
