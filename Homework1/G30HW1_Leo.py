@@ -42,6 +42,8 @@ def class_count_2_with_partition(docs):
 
     def gather_pairs_partitions(pairs):
         pairs_dict = {}
+        count=0
+        maxpartition="MaxPartition"
         for p in pairs:
             # swapping key and value
             key, aclass = p[0], p[1]
@@ -49,14 +51,16 @@ def class_count_2_with_partition(docs):
                 pairs_dict[aclass] = 1
             else:
                 pairs_dict[aclass] += 1
+            count += 1
+        pairs['MaxPartion'] = count
+        print(type(aclass))
+        print(type(pairs_dict[aclass]))
         return [(aclass, pairs_dict[aclass]) for aclass in pairs_dict.keys()]
 
     word_count = (docs.flatMap(map1)  # <-- MAP PHASE (R1)
                   .mapPartitions(gather_pairs_partitions)  # <-- REDUCE PHASE (R1)
                   .groupByKey()  # <-- REDUCE PHASE (R2)
-                  .mapValues(lambda vals: sum(vals))
-                  .reduceByKey(lambda x , y : max(x,y)))
-
+                  .mapValues(lambda vals: sum(vals)))
     return word_count
 
 
