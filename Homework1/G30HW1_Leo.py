@@ -43,7 +43,6 @@ def class_count_2_with_partition(docs):
     def gather_pairs_partitions(pairs):
         pairs_dict = {}
         count=0
-        maxpartition="MaxPartition"
         for p in pairs:
             # swapping key and value
             key, aclass = p[0], p[1]
@@ -52,16 +51,17 @@ def class_count_2_with_partition(docs):
             else:
                 pairs_dict[aclass] += 1
             count += 1
-        pairs['MaxPartion'] = count
-        print(type(aclass))
-        print(type(pairs_dict[aclass]))
+        pairs_dict['MaxPartition'] = count
         return [(aclass, pairs_dict[aclass]) for aclass in pairs_dict.keys()]
 
     word_count = (docs.flatMap(map1)  # <-- MAP PHASE (R1)
                   .mapPartitions(gather_pairs_partitions)  # <-- REDUCE PHASE (R1)
-                  .groupByKey()  # <-- REDUCE PHASE (R2)
-                  .mapValues(lambda vals: sum(vals)))
-    return word_count
+                  .groupByKey())  # <-- REDUCE PHASE (R2)
+
+    class_count = word_count.filter(lambda x: x[0] != "maxPartition").mapValues(sum)
+    max_partition_size = word_count.filter(lambda x: x[0] == "maxPartition").mapValues(max)
+
+    return class_count.union(max_partition_size)
 
 
 def main():
@@ -91,14 +91,14 @@ def main():
 
 
     #print("CLASS COUNT 1 = ", class_count_1(docs, K).collect())
-
-    
     stats = class_count_2_with_partition(docs)
-    maxvalue= stats.max(key=lambda x:x[1]) 
+
+    maxvalue = stats.sortByKey().filter(lambda x: x[0] != "MaxPartition").max(lambda pair: pair[1])
+    max_partition_size = stats.filter(lambda x: x[0] == "MaxPartition").collect()
     print("MOST FREQUENT CLASS = ", maxvalue)
     #TODO ties must be broken in favor of the smaller class in alphabetical order
 
-    print("Max partition size = ", )
+    print("Max partition size = ", max_partition_size[0] )
 
 if __name__ == "__main__":
     main()
