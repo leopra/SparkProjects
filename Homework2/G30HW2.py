@@ -1,9 +1,11 @@
+
+
+
 from pyspark import SparkContext, SparkConf
 import sys
 import os
 import random as rand
-
-
+import TupleInput as ti
 
 #receives in input a set of points S and returns the max distance between two 
 # points in S.
@@ -25,15 +27,16 @@ def kCenterMPD(S,k):
 
 
 def main():
-    assert len(sys.argv) == 3, "Usage: python TemplateHW1.py <K> <file_name>"
+    rand.seed(42)
 
-    
+    assert len(sys.argv) == 3
+
     # SPARK SETUP
     conf = SparkConf().setAppName('HW2').setMaster("local[*]")
     sc = SparkContext(conf=conf)
 
-    print(sc)
-
+    data = ti.readTuplesSeq(sys.argv[2])
+    print(data[:10])
 
 if __name__ == "__main__":
     main()
