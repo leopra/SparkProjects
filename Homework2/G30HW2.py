@@ -8,6 +8,7 @@ import os
 import random as rand
 import TupleInput as ti
 import math 
+import numpy as np
 
 rand.seed(42)
 
@@ -58,10 +59,10 @@ def twoApproxMPD(S,k):
 
         for co in coords:
             #print(co)
-            y0,y1 = co[1]
+            a = np.array(co[1])
             for point in co1:
-                x0, x1 = point[1]
-                temp = math.sqrt((x0-y0)**2 + (x1-y1)**2)
+                b = np.array(point[1])
+                temp = np.linalg.norm(a-b)
             if temp > maxds:
                 maxds = temp
         
@@ -69,7 +70,12 @@ def twoApproxMPD(S,k):
         return k
 
 
-    g = S.flatMap(copyKPoints).repartition(K).groupByKey().mapValues(sorted).mapPartitions(getMax).reduceByKey(max).values()
+    g = (S.flatMap(copyKPoints)     #using a single worker, get k points and copy it, one for each cluster (as many clusters as points)
+          .repartition(K)           #now we add multiple workers
+          .groupByKey()             #group by key
+          .mapValues(sorted)        #sort so the S' points are first first element of tuple is 0
+          .mapPartitions(getMax)    #apply the getMax alg to each worker
+          .reduceByKey(max).values()) #get the max of all results
 
     return g  
 
