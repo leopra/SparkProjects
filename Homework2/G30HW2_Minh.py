@@ -19,7 +19,6 @@ def exactMPD(S):
 
     return max_dist
 
-
 def main():
     rand.seed(42)
 
