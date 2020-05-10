@@ -21,8 +21,37 @@ def exactMPD(S):
 
 def twoApproxMPD(S,k):
 
-    return 0
+    assert k < len(S)
+    co1=[]
+    maxds=0
+    L = len(S)-1
+    kpoints = rand.sample(range(1,L), k)
 
+
+    for i in kpoints:
+        co1.append(S[i])
+
+    #what if i find first the 2 farthest point in the k points?
+    maxdsk=0
+    twomostdist = []
+    for j in co1:
+        for k in co1:
+            temp = np.sqrt(sum([(x-z)**2 for x, z in zip(j,k)]))
+            if temp > maxds:
+                maxds = temp
+                p1, p2 = j, k
+
+    co1 = [p1,p2]
+
+    for co in S:
+        for point in co1:
+            temp = np.sqrt(sum([(x-z)**2 for x, z in zip(co,point)]))
+        if temp > maxds:
+            maxds = temp
+
+    return maxds
+
+ 
 
 #receives in input a set of points S and an integer k < |S|, and returns a set C 
 # of k centers selected from S using the Farthest-First Traversal algorithm. 
@@ -40,10 +69,10 @@ def main():
     #conf = SparkConf().setAppName('HW2').setMaster("local[*]")
     #sc = SparkContext(conf=conf)
 
-    # data = ti.readTuplesSeq(sys.argv[2])
-    # s = time.time()
-    # print('twoApproxMPD: ', twoApproxMPD(data, int(sys.argv[1])))
-    # e = time.time()
-    # print('time taken: ', e-s)
+    data = ti.readTuplesSeq(sys.argv[2])
+    s = time.time()
+    print('twoApproxMPD: ', twoApproxMPD(data, int(sys.argv[1])))
+    e = time.time()
+    print('time taken: ', e-s)
 if __name__ == "__main__":
     main()
