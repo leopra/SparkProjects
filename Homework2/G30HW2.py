@@ -27,21 +27,8 @@ def twoApproxMPD(S,k):
     L = len(S)-1
     kpoints = rand.sample(range(1,L), k)
 
-
     for i in kpoints:
         co1.append(S[i])
-
-    #what if i find first the 2 farthest point in the k points?
-    maxdsk=0
-    twomostdist = []
-    for j in co1:
-        for k in co1:
-            temp = np.sqrt(sum([(x-z)**2 for x, z in zip(j,k)]))
-            if temp > maxds:
-                maxds = temp
-                p1, p2 = j, k
-
-    co1 = [p1,p2]
 
     for co in S:
         for point in co1:
