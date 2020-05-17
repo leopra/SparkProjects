@@ -49,7 +49,7 @@ def twoApproxMPD(S, k):
 #receives in input a set of points S and an integer k < |S|, and returns a set C 
 # of k centers selected from S using the Farthest-First Traversal algorithm. 
 # It is important that kCenterMPD(S,k) run in O(|S|*k) time
-def kCenterMPD(S,k):
+def kCenterMPD(S, k):
     assert k < len(S), "k must be less than the size of S"
 
     P = set(S)
@@ -57,14 +57,22 @@ def kCenterMPD(S,k):
 
     p = P.pop()
     S.add(p)
+
+    # dists_dict is a support data structure to keep a reference of the (a dict, in this implementation)
+    # the first initialization saves the distance of each point from the first selected point p.
+    # in the following for loop, the dict is updated once for every new center added to the resulting set,
+    # keeping the minimum between the current distance and the computed distance from the new center.
+    # This should ensure that the entire method has a complexity of O(k*|S|)
     dists_dict = {key: euclidean_distance(key, p) for key in P}
 
-    for i in range(1, k):
-        c = max(dists_dict, key=dists_dict.get)
-        for t in P:
+    for i in range(1, k):  # O(k)
+        c = max(dists_dict, key=dists_dict.get)  # O(|S|)
+        for t in P:  # O(|S|)
             dists_dict[t] = min(dists_dict[t], euclidean_distance(t, c))
         S.add(c)
         P.discard(c)
+
+    # TOT: O(k * (|S| + |S|)) = O(k*|S|)
 
     return list(S)
 
