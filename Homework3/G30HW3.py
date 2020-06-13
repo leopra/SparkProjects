@@ -1,11 +1,15 @@
+#this part needed just for me Leo
+#import findspark
+#findspark.init('/home/leokane96/SparkDir/spark-3.0.0-preview2-bin-hadoop2.7')
+#from pyspark import SparkContext, SparkConf
 
-
-from pyspark import SparkContext, SparkConf
 import sys
 import os
 import random as rand
 import numpy as np
 import time 
+
+from runSequential import runSequential
 
 #TODO this global variable is needed to specify first parameter kCenterMPD when used as Higher order function, find better solution
 global K 
@@ -56,13 +60,14 @@ def callKcenter(S):
 # and performs the following activities.
 
 def runMapReduce(pointsRDD,k,L):
-    #useless can be removed
+    #useless can be removed, (usefull to understand what K is)
     global K
     K = k 
     #######################
-
-    result = pointsRDD.repartition(L).mapPartitions(callKcenter)
-    return result
+    #get coreset using kcenterMPD
+    coreset = pointsRDD.repartition(L).mapPartitions(callKcenter).collect()
+    #return k point obtained from runsequential
+    return runSequential(coreset, K)
 
 #(b) measure(pointsSet): receives in input a set of points (pointSet) and computes 
 # the average distance between all pairs of points. The set pointSet must be 
@@ -89,7 +94,7 @@ def main():
     #to read the input and convert tuple of string to tuple of float
     docs = sc.textFile(inputPath).map(lambda x: tuple(float(dim) for dim in x.split(",")))
 
-    print(runMapReduce(docs, K, L).collect())
+    print(runMapReduce(docs, K, L))
 
 if __name__ == "__main__":
     main()
