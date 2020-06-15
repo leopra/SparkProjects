@@ -1,19 +1,16 @@
 #this part needed just for me Leo
 #import findspark
 #findspark.init('/home/leokane96/SparkDir/spark-3.0.0-preview2-bin-hadoop2.7')
-#from pyspark import SparkContext, SparkConf
+from pyspark import SparkContext, SparkConf
 
 import sys
 import os
 import random as rand
+
 import numpy as np
 import time 
 
 from runSequential import runSequential
-
-#TODO this global variable is needed to specify first parameter kCenterMPD when used as Higher order function, find better solution
-global K 
-K=-1
 
 def euclidean_distance(u, v):
     return np.sqrt(sum([(a - b) ** 2 for a, b in zip(u, v)]))
@@ -60,41 +57,62 @@ def callKcenter(S):
 # and performs the following activities.
 
 def runMapReduce(pointsRDD,k,L):
-    #useless can be removed, (usefull to understand what K is)
     global K
-    K = k 
-    #######################
+    K = k
+
+    start = time.time()
+    temp = pointsRDD.mapPartitions(callKcenter).cache()
+    r1_elapsed = time.time() - start
+
     #get coreset using kcenterMPD
-    coreset = pointsRDD.repartition(L).mapPartitions(callKcenter).collect()
+    start = time.time()
+    coreset = temp.collect()
     #return k point obtained from runsequential
-    return runSequential(coreset, K)
+    solution = runSequential(coreset, K)
+    r2_elapsed = time.time() - start
+
+    return solution, r1_elapsed, r2_elapsed
 
 #(b) measure(pointsSet): receives in input a set of points (pointSet) and computes 
 # the average distance between all pairs of points. The set pointSet must be 
 # represented as ArrayList<Vector> (in Java) or list of tuple (in Python).
 
-def measure(pointsSet):
-    return 0
+def measure(pointSet):
+    pairsDistance = [euclidean_distance(pointSet[i], pointSet[j]) for i in range(len(pointSet)) for j in range(i+1, len(pointSet))]
+
+    return np.mean(pairsDistance)
 
 
 def main():
-    global K
-
     assert len(sys.argv) == 4, "Two arguments must be provided: k desired number of centers, S set of points"
-    assert str(sys.argv[1]).isdigit(), "k must be a number"
-    assert str(sys.argv[3]).isdigit(), "L = number of partitions"
+    assert str(sys.argv[2]).isdigit(), "k must be a number"
+    assert str(sys.argv[3]).isdigit(), "L must be a number"
 
     L = int(sys.argv[3])
-    inputPath = sys.argv[2]
-    K = int(sys.argv[1])
+    inputPath = sys.argv[1]
+    K = int(sys.argv[2])
     # SPARK SETUP
     conf = SparkConf().setAppName('HW3') #.setMaster("local[*]") not needed
     sc = SparkContext(conf=conf)
 
     #to read the input and convert tuple of string to tuple of float
-    docs = sc.textFile(inputPath).map(lambda x: tuple(float(dim) for dim in x.split(",")))
+    start = time.time()
+    docs = sc.textFile(inputPath).map(lambda x: tuple(float(dim) for dim in x.split(","))).repartition(L).cache()
+    init_time = time.time() - start
 
-    print(runMapReduce(docs, K, L))
+    print(f"Number of points: {docs.count()}")
+    print(f"k = {K}")
+    print(f"L = {L}")
+    print(f"Initialization time = {init_time * 1000} ms")
+
+    solution, r1_time, r2_time = runMapReduce(docs, K, L)
+
+    print(f"Runtime of Round 1: {r1_time * 1000} ms")
+    print(f"Runtime of Round 2: {r2_time * 1000} ms")
+
+    avg = measure(solution)
+
+    print(f"Average distance = {avg}")
 
 if __name__ == "__main__":
     main()
