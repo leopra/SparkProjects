@@ -12,6 +12,7 @@ import time
 
 from runSequential import runSequential
 
+
 def euclidean_distance(u, v):
     return np.sqrt(sum([(a - b) ** 2 for a, b in zip(u, v)]))
 
@@ -46,9 +47,10 @@ def kCenterMPD(S, k):
     # else:
     #     return 0
 
+
 def callKcenter(S):
-    global K 
-    return kCenterMPD(S, K) 
+    global K
+    return kCenterMPD(S, K)
 
 
 #(a) runMapReduce(pointsRDD,k,L): implements the 4-approximation 
@@ -73,14 +75,24 @@ def runMapReduce(pointsRDD,k,L):
 
     return solution, r1_elapsed, r2_elapsed
 
+
 #(b) measure(pointsSet): receives in input a set of points (pointSet) and computes 
 # the average distance between all pairs of points. The set pointSet must be 
 # represented as ArrayList<Vector> (in Java) or list of tuple (in Python).
 
 def measure(pointSet):
-    pairsDistance = [euclidean_distance(pointSet[i], pointSet[j]) for i in range(len(pointSet)) for j in range(i+1, len(pointSet))]
+    # pairsDistance = [euclidean_distance(pointSet[i], pointSet[j]) for i in range(len(pointSet)) for j in range(i+1, len(pointSet))]
+    #
+    # return np.mean(pairsDistance)
+    tot = 0.
+    for i in range(len(pointSet) - 1):
+        for j in range(i + 1, len(pointSet)):
+            tot += euclidean_distance(pointSet[i], pointSet[j])
 
-    return np.mean(pairsDistance)
+    return tot / ((len(pointSet) * (len(pointSet) - 1)) / 2)
+
+
+K = 0
 
 
 def main():
@@ -90,22 +102,23 @@ def main():
 
     L = int(sys.argv[3])
     inputPath = sys.argv[1]
-    K = int(sys.argv[2])
+    k = int(sys.argv[2])
     # SPARK SETUP
-    conf = SparkConf().setAppName('HW3') #.setMaster("local[*]") not needed
+    conf = SparkConf().setAppName('HW3')  # .setMaster("local[*]") not needed
     sc = SparkContext(conf=conf)
 
-    #to read the input and convert tuple of string to tuple of float
+    # to read the input and convert tuple of string to tuple of float
     start = time.time()
     docs = sc.textFile(inputPath).map(lambda x: tuple(float(dim) for dim in x.split(","))).repartition(L).cache()
+    # docs = sc.textFile(inputPath).map(lambda x: tuple(float(dim) for dim in x.split(","))).repartition(L).collect()
     init_time = time.time() - start
 
-    print(f"Number of points: {docs.count()}")
-    print(f"k = {K}")
+    print(f"Number of points = {docs.count()}")
+    print(f"k = {k}")
     print(f"L = {L}")
     print(f"Initialization time = {init_time * 1000} ms")
 
-    solution, r1_time, r2_time = runMapReduce(docs, K, L)
+    solution, r1_time, r2_time = runMapReduce(docs, k, L)
 
     print(f"Runtime of Round 1: {r1_time * 1000} ms")
     print(f"Runtime of Round 2: {r2_time * 1000} ms")
@@ -113,6 +126,7 @@ def main():
     avg = measure(solution)
 
     print(f"Average distance = {avg}")
+
 
 if __name__ == "__main__":
     main()
